@@ -1,0 +1,67 @@
+https://blog.csdn.net/flashflight/article/details/51541859#comments
+https://blog.csdn.net/flashflight/article/details/51712716
+
+一、Broker
+    消息队列核心，相当于一个控制中心，负责路由消息、保存订阅和连接、消息确认和控制事务
+1.Broker接口
+    定义了一些获取broker本身相关信息，添加connection、destination、session、消息生产者、控制事务的接口
+1.1 CompositeDestinationBroker
+    多目的地Broker，Producer可以通过它将生产的消息传给多个destination
+
+1.2 EmptyBroker
+    空broker
+1.3 ErrorBroker
+    调用的它的方法会抛出BrokerStoppedException
+1.4 TransactionBroker
+    为broker的每个方法提供分布式事务XA支持
+
+2、BrokerFactory（抽象工厂模式）
+public static BrokerService createBroker(URI brokerURI, boolean startBroker) throws Exception {
+        if (brokerURI.getScheme() == null) {
+            throw new IllegalArgumentException("Invalid broker URI, no scheme specified: " + brokerURI);
+        }
+        //根据url创建工厂实例
+        BrokerFactoryHandler handler = createBrokerFactoryHandler(brokerURI.getScheme());
+        //利用工厂handler创建broker（产品）
+        BrokerService broker = handler.createBroker(brokerURI);
+        if (startBroker) {
+            broker.start();
+        }
+        return broker;
+    }
+3、BrokerContext
+    上下文环境，参考spring的ApplicationContext
+4、BrokerContextAware
+    获取上下文环境接口
+5、BrokerFilter
+    Broker的子类，用户可以在broker的操作前后加入一些自己的逻辑以实现像安全这样的逻辑
+6、BrokerPlugin和BrokerPluginSupport
+    BrokerPlugin只有一个方法：
+    
+    BrokerPluginSupport继承自MutableBrokerFilter并实现BrokerPlugin，实现机制跟BrokerFilter类似。
+7、BrokerRegistry
+    
+     很明显，这里有一个单例模式，一个互斥信号量mutex和一个保存所有BrokerService的map brokers。它是一个注册中心，负责维护所有BrokerSerevice，完成获取、绑定和解绑等操作。
+8、BrokerService和BrokerServiceAware
+    后者是获取BrokerService的接口，前者是一个核心的类，它有自己的声明周期，连接了Connector，Broker，Region等组件，包括创建、注册和移除相关的组件。
+
+8.1、SslBrokerService
+    在创建连接时提供ssl安全链接
+
+9、TransportConnector
+    提供通信服务
+
+10、ProductorBrokerExchange和ConsumerBrokerExchange
+    对Broker和Producer、Broker和Consumer之间的流进行控制，并跟踪记录信息
+
+总结
+    1、ActiveMQ的特性基本上都是通过BrokerFilter模式加上去的 
+    
+    
+HTTP
+
+主要的代码在http包中，它依赖于apache httpclient，首先来看看客户端类HttpClientTransport,主要介绍它的三个方法，oneway()、run()和start().
+
+oneway：简单的一次http post请求传输数据，这里顺带科普一下，activemq中connector负责broker与broker之间的通讯，transport负责broker和客户端之间的通讯。
+
+    
